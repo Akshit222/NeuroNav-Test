@@ -45,25 +45,30 @@ class EyeTrackingMouseControl:
         self.x_min, self.x_max = None, None
         self.y_min, self.y_max = None, None
         
-        # Enhanced blink detection parameters
+        # Simplified blink detection parameters
         self.blink_state = {
             'is_blinking': False,
             'start_time': 0,
-            'duration': 0,
-            'last_pos_x': None,
-            'last_pos_y': None,
-            'click_prepared': False
+            'last_blink_end_time': 0,
+            'blink_complete': False
         }
         
         # Blink detection thresholds
         self.blink_threshold = 0.01
-        self.blink_hold_duration = 0.3  # Duration to prepare click
-        self.click_cooldown = 0.4
-        self.last_click_time = 0
+        self.min_blink_duration = 0.05  # Minimum time eye must be closed to count as intentional blink
+        self.max_blink_duration = 0.5   # Maximum time for a blink (longer is considered intentional closing)
+        self.click_cooldown = 0.7       # Prevent accidental double-clicks
+        
+        # Key landmarks
+        # Right eye landmark for movement (right eye center)
+        self.RIGHT_EYE_CENTER = 473
+        # Left eye landmarks for blink detection
+        self.LEFT_EYE_TOP = 159
+        self.LEFT_EYE_BOTTOM = 145
     
     def calibrate(self):
-        """Enhanced calibration process with more robust landmark tracking."""
-        print("Calibrating... Look around the screen edges.")
+        """Enhanced calibration process focused on right eye tracking."""
+        print("Calibrating... Look around the screen edges using your right eye.")
         x_vals, y_vals = [], []
         start_time = time.time()
         
@@ -88,9 +93,10 @@ class EyeTrackingMouseControl:
             
             if output.multi_face_landmarks:
                 landmarks = output.multi_face_landmarks[0].landmark
-                eye_landmark = landmarks[474]  # Consistent landmark
-                x_vals.append(eye_landmark.x)
-                y_vals.append(eye_landmark.y)
+                # Use right eye for movement calibration
+                right_eye_landmark = landmarks[self.RIGHT_EYE_CENTER]
+                x_vals.append(right_eye_landmark.x)
+                y_vals.append(right_eye_landmark.y)
             
             # Timeout and exit handling
             if time.time() - start_time > 45:
@@ -145,50 +151,48 @@ class EyeTrackingMouseControl:
         
         return screen_x, screen_y
     
-    def detect_blink(self, left_eye, screen_x, screen_y):
+    def detect_blink(self, left_eye_top, left_eye_bottom):
         """
-        Enhanced blink detection with click preparation and position locking
+        Left eye dedicated blink detection - single blink for click
         
-        Key improvements:
-        1. Prepare click without moving mouse
-        2. Lock mouse position during blink
-        3. Require sustained blink for click
+        Args:
+            left_eye_top: Top landmark of left eye
+            left_eye_bottom: Bottom landmark of left eye
+        
+        Returns:
+            bool: True if click should be performed
         """
         current_time = time.time()
-        eye_height = abs(left_eye[0].y - left_eye[1].y)
+        eye_height = abs(left_eye_top.y - left_eye_bottom.y)
+        should_click = False
         
-        # Blink detection logic
+        # Detect when eye closes
         if eye_height < self.blink_threshold:
             if not self.blink_state['is_blinking']:
-                # First frame of blink
+                # First frame of blink - eye just closed
                 self.blink_state['is_blinking'] = True
                 self.blink_state['start_time'] = current_time
-                # Lock the current mouse position
-                self.blink_state['last_pos_x'] = screen_x
-                self.blink_state['last_pos_y'] = screen_y
-                self.blink_state['click_prepared'] = False
-            
-            # Calculate blink duration
-            blink_duration = current_time - self.blink_state['start_time']
-            
-            # Prepare click after a hold duration
-            if blink_duration > self.blink_hold_duration:
-                self.blink_state['click_prepared'] = True
-            
-            # Execute click if conditions are met
-            if (self.blink_state['click_prepared'] and 
-                current_time - self.last_click_time > self.click_cooldown):
-                pyautogui.click()
-                self.last_click_time = current_time
-                return True, self.blink_state['last_pos_x'], self.blink_state['last_pos_y']
+                self.blink_state['blink_complete'] = False
+        # Detect when eye opens
         else:
-            # Reset blink state when eye opens
             if self.blink_state['is_blinking']:
+                # Eye just opened after being closed
+                blink_duration = current_time - self.blink_state['start_time']
+                
+                # Only count as a blink if duration is within our thresholds
+                # This helps distinguish intentional blinks from noise or very long eye closures
+                if (self.min_blink_duration <= blink_duration <= self.max_blink_duration and
+                    current_time - self.blink_state['last_blink_end_time'] > self.click_cooldown):
+                    
+                    # This is a valid blink that should trigger a click
+                    pyautogui.click()
+                    should_click = True
+                    self.blink_state['last_blink_end_time'] = current_time
+                
+                # Reset blink state
                 self.blink_state['is_blinking'] = False
-                self.blink_state['duration'] = 0
-                self.blink_state['click_prepared'] = False
         
-        return False, screen_x, screen_y
+        return should_click
     
     def run(self):
         # Calibration
@@ -199,6 +203,7 @@ class EyeTrackingMouseControl:
             return
         
         print("Eye tracking started. Press 'q' to quit.")
+        print("Right eye controls cursor movement, left eye controls clicking (single blink = click).")
         
         while True:
             ret, frame = self.cam.read()
@@ -215,35 +220,52 @@ class EyeTrackingMouseControl:
             if output.multi_face_landmarks:
                 landmarks = output.multi_face_landmarks[0].landmark
                 
-                # Tracking landmark
-                eye_landmark = landmarks[474]
+                # RIGHT EYE FOR MOVEMENT
+                right_eye_landmark = landmarks[self.RIGHT_EYE_CENTER]
                 
-                # Compute screen coordinates
+                # Compute screen coordinates from right eye
                 screen_x, screen_y = self.map_coordinates(
-                    eye_landmark.x, eye_landmark.y, frame_w, frame_h
+                    right_eye_landmark.x, right_eye_landmark.y, frame_w, frame_h
                 )
                 
-                # Blink detection
-                left_eye = [landmarks[145], landmarks[159]]
-                is_click, locked_x, locked_y = self.detect_blink(left_eye, screen_x, screen_y)
+                # LEFT EYE FOR BLINK DETECTION
+                left_eye_top = landmarks[self.LEFT_EYE_TOP]
+                left_eye_bottom = landmarks[self.LEFT_EYE_BOTTOM]
                 
-                # Move mouse if not in click preparation state
-                if not is_click and not self.blink_state['click_prepared']:
-                    pyautogui.moveTo(screen_x, screen_y)
-                else:
-                    # Keep mouse at locked position during click preparation/execution
-                    pyautogui.moveTo(locked_x, locked_y)
+                # Detect blink using left eye only
+                is_click = self.detect_blink(left_eye_top, left_eye_bottom)
+                
+                # Move mouse based on right eye - this keeps happening even during blinks
+                pyautogui.moveTo(screen_x, screen_y)
                 
                 # Visualization
-                x = int(eye_landmark.x * frame_w)
-                y = int(eye_landmark.y * frame_h)
-                cv2.circle(frame, (x, y), 5, (0, 255, 0), -1)
+                # Right eye tracking point
+                rx = int(right_eye_landmark.x * frame_w)
+                ry = int(right_eye_landmark.y * frame_h)
+                cv2.circle(frame, (rx, ry), 5, (0, 255, 0), -1)
                 
-                # Blink landmarks
-                for landmark in left_eye:
-                    lx = int(landmark.x * frame_w)
-                    ly = int(landmark.y * frame_h)
-                    cv2.circle(frame, (lx, ly), 3, (0, 255, 255), -1)
+                # Left eye blink detection points
+                ltx = int(left_eye_top.x * frame_w)
+                lty = int(left_eye_top.y * frame_h)
+                lbx = int(left_eye_bottom.x * frame_w)
+                lby = int(left_eye_bottom.y * frame_h)
+                
+                # Different color for left eye detection points
+                cv2.circle(frame, (ltx, lty), 3, (255, 0, 0), -1)
+                cv2.circle(frame, (lbx, lby), 3, (255, 0, 0), -1)
+                
+                # Draw line between left eye points to visualize blink
+                cv2.line(frame, (ltx, lty), (lbx, lby), (255, 0, 0), 1)
+                
+                # Show blink status
+                if self.blink_state['is_blinking']:
+                    cv2.putText(frame, "BLINK DETECTED", (30, 30), 
+                               cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
+                
+                # Show click status
+                if is_click:
+                    cv2.putText(frame, "CLICK!", (30, 60), 
+                               cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 0, 0), 2)
             
             # Display frame
             cv2.imshow("Eye Tracking Mouse Control", frame)
