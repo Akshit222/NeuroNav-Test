@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import EEGWave from './EEGWave'; // Import the EEG component
 import {
   ResponsiveContainer,
   LineChart,
@@ -21,6 +22,7 @@ const NeuroNavDashboard = () => {
   });
   const [loading, setLoading] = useState(true);
   const [showSentimentAnalysis, setShowSentimentAnalysis] = useState(false);
+  
   useEffect(() => {
     // Fetch sentiment data when component mounts
     fetchSentimentData();
@@ -357,6 +359,49 @@ const NeuroNavDashboard = () => {
     </div>
   );
 
+  // Enhanced consistent box style for all feature boxes
+  const FeatureBox = ({ title, icon, children, height = "auto" }) => (
+    <div
+      style={{
+        backgroundColor: "#19212E",
+        borderRadius: "12px",
+        padding: "20px",
+        boxShadow: "0 4px 15px rgba(0, 0, 0, 0.1)",
+        marginBottom: "20px",
+        height: height,
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
+      <div
+        style={{
+          fontSize: "18px",
+          fontWeight: "bold",
+          marginBottom: "15px",
+          display: "flex",
+          alignItems: "center",
+          gap: "10px",
+        }}
+      >
+        <div
+          style={{
+            width: "40px",
+            height: "40px",
+            backgroundColor: "rgba(132, 84, 238, 0.2)",
+            borderRadius: "8px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          {icon}
+        </div>
+        {title}
+      </div>
+      {children}
+    </div>
+  );
+
   return (
     <div
       style={{
@@ -505,9 +550,79 @@ const NeuroNavDashboard = () => {
               </div>
             </div>
           </div>
+          
           {showSentimentAnalysis && <SentimentAnalysisView />}
 
-          {/* Feature Cards Grid */}
+          {/* 1. Sentiment Analysis Box */}
+          <FeatureBox title="Sentiment Analysis" icon="🤖">
+            <p style={{ marginBottom: "15px" }}>
+              Chat with a chatbot and get an analyzed Sentiment Analysis. Discover emotion patterns
+              and gain insights into your conversational well-being.
+            </p>
+            <div
+              style={{
+                display: "flex",
+                gap: "10px",
+                marginTop: "auto",
+              }}
+            >
+              <Button onClick={() => handleFeatureCardClick("sentiment-analysis")}>
+                Run Analysis
+              </Button>
+              <Button onClick={() => window.location.href = "http://localhost:3001"}>
+                Start Conversation
+              </Button>
+            </div>
+          </FeatureBox>
+
+          {/* 2. Eye Tracking Games Box */}
+          <FeatureBox title="Eye Tracking Games" icon="🎮">
+            <p style={{ marginBottom: "15px" }}>
+              Control games with your eye movements. Enhance coordination and focus with
+              specialized eye-tracking technology.
+            </p>
+            <div
+              style={{
+                display: "flex",
+                gap: "10px",
+                marginTop: "auto",
+              }}
+            >
+              <Button onClick={() => window.location.href = "http://localhost:7002"}>
+                Plane Control Aviator
+              </Button>
+              <Button secondary onClick={() => alert("FPS game will be linked soon")}>
+                3D FPS Game
+              </Button>
+            </div>
+          </FeatureBox>
+
+          {/* 3. Virtual Environments Box */}
+          <FeatureBox title="3D Virtual Environments" icon="🌐">
+            <p style={{ marginBottom: "15px" }}>
+              Explore immersive neural landscapes and interact with 3D visualizations of brain 
+              activity. Navigate through complex mental patterns in an interactive environment.
+            </p>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "flex-start",
+                gap: "10px",
+                marginTop: "auto",
+              }}
+            >
+              <Button onClick={() => window.location.href = "http://localhost:6002"}>
+                Launch Environment
+              </Button>
+            </div>
+          </FeatureBox>
+
+          {/* 4. Neural Activity Box (EEGWave component) */}
+          <FeatureBox title="Neural Activity" icon="📊">
+            <EEGWave />
+          </FeatureBox>
+
+          {/* Bottom Cards Section */}
           <div
             style={{
               display: "grid",
@@ -516,147 +631,30 @@ const NeuroNavDashboard = () => {
               marginBottom: "30px",
             }}
           >
-            <FeatureCard
-              id="virtual-environments"
-              icon="🌐"
-              title="3D Virtual Environments"
-              content="Explore immersive neural landscapes"
-              buttonText="Launch Environment"
-              onClick={() => handleFeatureCardClick("virtual-environments")}
-            />
-
-            <div
-              style={{
-                backgroundColor: "#19212E",
-                borderRadius: "12px",
-                padding: "20px",
-                boxShadow: "0 4px 15px rgba(0, 0, 0, 0.1)",
-                transition: "transform 0.3s ease, box-shadow 0.3s ease",
-                cursor: "pointer",
-                position: "relative",
-                overflow: "hidden",
-              }}
-            >
-              <div
-                style={{
-                  fontSize: "18px",
-                  fontWeight: "bold",
-                  marginBottom: "15px",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "10px",
-                }}
-              >
-                <div
-                  style={{
-                    width: "40px",
-                    height: "40px",
-                    backgroundColor: "rgba(132, 84, 238, 0.2)",
-                    borderRadius: "8px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  🤖
-                </div>
-                Sentiment Analysis Bot
+            <FeatureBox title="Recent Activity" icon="📈" height="100%">
+              <div style={{ marginBottom: "15px" }}>
+                <ActivityItem
+                  label="Sentiment Analysis Session"
+                  time="2 hours ago"
+                />
+                <ActivityItem
+                  label="Neural Training Complete"
+                  time="Yesterday"
+                />
+                <ActivityItem label="Model Update" time="2 days ago" />
               </div>
-
-              <p>Analyze emotional data patterns</p>
-
-              {/* Buttons Container */}
               <div
                 style={{
                   display: "flex",
-                  gap: "10px",
-                  marginTop: "15px",
+                  justifyContent: "flex-start",
+                  marginTop: "auto",
                 }}
               >
-                <button
-                  onClick={() => handleFeatureCardClick("sentiment-analysis")}
-                  style={{
-                    flex: 1,
-                    padding: "10px 15px",
-                    border: "none",
-                    borderRadius: "8px",
-                    backgroundColor: "#8454EE",
-                    color: "white",
-                    fontWeight: "bold",
-                    cursor: "pointer",
-                    transition: "background 0.3s ease",
-                  }}
-                >
-                  Run Analysis
-                </button>
-
-                <button
-                  onClick={() =>
-                    (window.location.href = "http://localhost:3001")
-                  }
-                  style={{
-                    flex: 1,
-                    padding: "10px 15px",
-                    border: "none",
-                    borderRadius: "8px",
-                    backgroundColor: "#8454EE",
-                    color: "white",
-                    fontWeight: "bold",
-                    cursor: "pointer",
-                    transition: "background 0.3s ease",
-                  }}
-                >
-                  Start Another Conversation
-                </button>
+                <Button secondary>View All</Button>
               </div>
-            </div>
+            </FeatureBox>
 
-            <FeatureCard
-              id="games"
-              icon="🎮"
-              title="Neural Games"
-              content="Cognitive training through play"
-              buttonText="Play Now"
-              onClick={() => handleFeatureCardClick("games")}
-            />
-
-            <div
-              style={{
-                backgroundColor: "#19212E",
-                borderRadius: "12px",
-                padding: "20px",
-                boxShadow: "0 4px 15px rgba(0, 0, 0, 0.1)",
-                transition: "transform 0.3s ease, box-shadow 0.3s ease",
-                cursor: "pointer",
-                position: "relative",
-                overflow: "hidden",
-              }}
-            >
-              <div
-                style={{
-                  fontSize: "18px",
-                  fontWeight: "bold",
-                  marginBottom: "15px",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "10px",
-                }}
-              >
-                <div
-                  style={{
-                    width: "40px",
-                    height: "40px",
-                    backgroundColor: "rgba(132, 84, 238, 0.2)",
-                    borderRadius: "8px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  📊
-                </div>
-                Performance Metrics
-              </div>
+            <FeatureBox title="Performance Metrics" icon="📊" height="100%">
               <div
                 style={{
                   display: "grid",
@@ -669,218 +667,9 @@ const NeuroNavDashboard = () => {
                 <StatItem value="8.7k" label="Processes" />
                 <StatItem value="64GB" label="Memory Usage" />
               </div>
-            </div>
-          </div>
+            </FeatureBox>
 
-          {/* Chart Section */}
-          <div
-            style={{
-              backgroundColor: "#19212E",
-              borderRadius: "12px",
-              padding: "20px",
-              marginBottom: "30px",
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginBottom: "20px",
-              }}
-            >
-              <div
-                style={{
-                  fontSize: "18px",
-                  fontWeight: "bold",
-                }}
-              >
-                Neural Activity Overview
-              </div>
-
-              <div
-                style={{
-                  display: "flex",
-                  gap: "10px",
-                }}
-              >
-                <Button secondary>Export Data</Button>
-                <Button>Real-time View</Button>
-              </div>
-            </div>
-
-            <div
-              style={{
-                display: "flex",
-                gap: "15px",
-                marginBottom: "20px",
-              }}
-            >
-              {["Last 24 Hours", "Week", "Month", "Quarter"].map((tab) => (
-                <div
-                  key={tab}
-                  style={{
-                    padding: "8px 16px",
-                    borderRadius: "20px",
-                    cursor: "pointer",
-                    fontSize: "14px",
-                    transition: "all 0.2s ease",
-                    backgroundColor:
-                      activeTab === tab
-                        ? "#8454EE"
-                        : "rgba(255, 255, 255, 0.05)",
-                    color: activeTab === tab ? "white" : "inherit",
-                  }}
-                  onClick={() => setActiveTab(tab)}
-                >
-                  {tab}
-                </div>
-              ))}
-            </div>
-
-            <div
-              style={{
-                height: "300px",
-                position: "relative",
-              }}
-            >
-              <div
-                style={{
-                  width: "100%",
-                  height: "100%",
-                  background:
-                    "linear-gradient(180deg, rgba(132, 84, 238, 0.2) 0%, rgba(132, 84, 238, 0) 100%)",
-                  position: "relative",
-                  overflow: "hidden",
-                  borderRadius: "8px",
-                }}
-              >
-                <div
-                  style={{
-                    position: "absolute",
-                    bottom: 0,
-                    left: 0,
-                    width: "100%",
-                    height: "100px",
-                    backgroundImage: `url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100" viewBox="0 0 1000 100" preserveAspectRatio="none"><path d="M0,50 C150,20 300,80 450,50 C600,20 750,60 900,40 L900,100 L0,100 Z" fill="%238454EE" opacity="0.4"/></svg>')`,
-                    backgroundSize: "100% 100%",
-                  }}
-                ></div>
-
-                <Pulse
-                  style={{ top: "30%", left: "20%", animationDelay: "0s" }}
-                />
-                <Pulse
-                  style={{ top: "60%", left: "45%", animationDelay: "0.3s" }}
-                />
-                <Pulse
-                  style={{ top: "40%", left: "75%", animationDelay: "0.7s" }}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Bottom Cards Grid */}
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
-              gap: "20px",
-              marginBottom: "30px",
-            }}
-          >
-            <div
-              style={{
-                backgroundColor: "#19212E",
-                borderRadius: "12px",
-                padding: "20px",
-                boxShadow: "0 4px 15px rgba(0, 0, 0, 0.1)",
-              }}
-            >
-              <div
-                style={{
-                  fontSize: "18px",
-                  fontWeight: "bold",
-                  marginBottom: "15px",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "10px",
-                }}
-              >
-                <div
-                  style={{
-                    width: "40px",
-                    height: "40px",
-                    backgroundColor: "rgba(132, 84, 238, 0.2)",
-                    borderRadius: "8px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  📈
-                </div>
-                Recent Activity
-              </div>
-
-              <div style={{ marginBottom: "15px" }}>
-                <ActivityItem
-                  label="Sentiment Analysis Session"
-                  time="2 hours ago"
-                />
-                <ActivityItem
-                  label="Neural Training Complete"
-                  time="Yesterday"
-                />
-                <ActivityItem label="Model Update" time="2 days ago" />
-              </div>
-
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  marginTop: "15px",
-                }}
-              >
-                <Button secondary>View All</Button>
-              </div>
-            </div>
-
-            <div
-              style={{
-                backgroundColor: "#19212E",
-                borderRadius: "12px",
-                padding: "20px",
-                boxShadow: "0 4px 15px rgba(0, 0, 0, 0.1)",
-              }}
-            >
-              <div
-                style={{
-                  fontSize: "18px",
-                  fontWeight: "bold",
-                  marginBottom: "15px",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "10px",
-                }}
-              >
-                <div
-                  style={{
-                    width: "40px",
-                    height: "40px",
-                    backgroundColor: "rgba(132, 84, 238, 0.2)",
-                    borderRadius: "8px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  🚀
-                </div>
-                Quick Actions
-              </div>
-
+            <FeatureBox title="Quick Actions" icon="🚀" height="100%">
               <div
                 style={{
                   display: "grid",
@@ -893,7 +682,27 @@ const NeuroNavDashboard = () => {
                 <Button>Generate Report</Button>
                 <Button>Share Results</Button>
               </div>
-            </div>
+            </FeatureBox>
+            <FeatureBox title="Social Media Integration" icon="📱">
+  <p style={{ marginBottom: "15px" }}>
+    Connect your social media accounts and analyze engagement patterns through neural navigation. 
+    Get insights into your online presence and optimize your social interactions.
+  </p>
+  <div
+    style={{
+      display: "flex",
+      gap: "10px",
+      marginTop: "auto",
+    }}
+  >
+    <Button onClick={() => window.location.href = "http://localhost:8002"}>
+      Go
+    </Button>
+    <Button secondary onClick={() => alert("View analytics dashboard coming soon")}>
+      View Analytics
+    </Button>
+  </div>
+</FeatureBox>
           </div>
         </div>
       </div>
@@ -933,113 +742,6 @@ const NavItem = ({ icon, label, active, onClick }) => (
       {icon}
     </div>
     {label}
-  </div>
-);
-
-const FeatureCard = ({ id, icon, title, content, buttonText, onClick }) => (
-  <div
-    id={id}
-    style={{
-      backgroundColor: "#19212E",
-      borderRadius: "12px",
-      padding: "20px",
-      boxShadow: "0 4px 15px rgba(0, 0, 0, 0.1)",
-      transition: "transform 0.3s ease, box-shadow 0.3s ease",
-      cursor: "pointer",
-      position: "relative",
-      overflow: "hidden",
-      height: "180px",
-      display: "flex",
-      flexDirection: "column",
-      justifyContent: "space-between",
-      zIndex: 1,
-    }}
-    onClick={onClick}
-    onMouseEnter={(e) => {
-      e.currentTarget.style.transform = "translateY(-5px)";
-      e.currentTarget.style.boxShadow = "0 8px 25px rgba(132, 84, 238, 0.2)";
-    }}
-    onMouseLeave={(e) => {
-      e.currentTarget.style.transform = "translateY(0)";
-      e.currentTarget.style.boxShadow = "0 4px 15px rgba(0, 0, 0, 0.1)";
-    }}
-  >
-    <div
-      style={{
-        position: "absolute",
-        bottom: "-20px",
-        right: "-20px",
-        fontSize: "120px",
-        opacity: "0.1",
-        color: "#8454EE",
-        zIndex: -1,
-      }}
-    >
-      {icon}
-    </div>
-
-    <div
-      style={{
-        content: "",
-        position: "absolute",
-        top: 0,
-        left: 0,
-        width: "100%",
-        height: "100%",
-        background:
-          "linear-gradient(45deg, rgba(132, 84, 238, 0.4), transparent)",
-        borderRadius: "12px",
-        zIndex: -1,
-      }}
-    ></div>
-
-    <div
-      style={{
-        fontSize: "18px",
-        fontWeight: "bold",
-        marginBottom: "15px",
-        display: "flex",
-        alignItems: "center",
-        gap: "10px",
-      }}
-    >
-      <div
-        style={{
-          width: "40px",
-          height: "40px",
-          backgroundColor: "rgba(132, 84, 238, 0.2)",
-          borderRadius: "8px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        {icon}
-      </div>
-      {title}
-    </div>
-
-    <div style={{ marginBottom: "15px" }}>{content}</div>
-
-    <div
-      style={{
-        backgroundColor: "#8454EE",
-        color: "white",
-        border: "none",
-        padding: "10px 20px",
-        borderRadius: "8px",
-        cursor: "pointer",
-        fontWeight: "500",
-        transition: "all 0.2s ease",
-        display: "flex",
-        alignItems: "center",
-        gap: "8px",
-        justifyContent: "center",
-        width: "fit-content",
-      }}
-    >
-      {buttonText}
-    </div>
   </div>
 );
 
@@ -1112,20 +814,6 @@ const ActivityItem = ({ label, time }) => (
     <div>{label}</div>
     <div>{time}</div>
   </div>
-);
-
-const Pulse = ({ style }) => (
-  <div
-    style={{
-      position: "absolute",
-      width: "10px",
-      height: "10px",
-      backgroundColor: "#8454EE",
-      borderRadius: "50%",
-      animation: "pulse 2s infinite",
-      ...style,
-    }}
-  ></div>
 );
 
 export default NeuroNavDashboard;
