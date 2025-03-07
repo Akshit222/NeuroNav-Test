@@ -695,11 +695,30 @@ const NeuroNavDashboard = () => {
       marginTop: "auto",
     }}
   >
-    <Button onClick={() => window.location.href = "http://localhost:8002"}>
+    <Button onClick={() => window.location.href = "http://localhost:6900"}>
       Go
     </Button>
     <Button secondary onClick={() => alert("View analytics dashboard coming soon")}>
       View Analytics
+    </Button>
+  </div>
+</FeatureBox>
+<FeatureBox title="Vision to Text" icon="📱">
+  <p style={{ marginBottom: "15px" }}>
+    Algorithm reads your lips and then a virtual character speaks what u said can be used in chattingmethod to streamline the iris based chatting.Work in Progress
+  </p>
+  <div
+    style={{
+      display: "flex",
+      gap: "10px",
+      marginTop: "auto",
+    }}
+  >
+    <Button onClick={() => window.location.href = "http://127.0.0.1:3000/VisionToText/vision-to-text-voice/demo/lip_reading_3d.html"}>
+      Test
+    </Button>
+    <Button secondary onClick={() => alert("View analytics dashboard coming soon")}>
+      View
     </Button>
   </div>
 </FeatureBox>
