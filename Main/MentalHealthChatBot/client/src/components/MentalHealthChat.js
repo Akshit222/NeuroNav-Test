@@ -250,6 +250,7 @@ const MentalHealthChat = () => {
   const [canListen, setCanListen] = useState(true);
   const [currentMood, setCurrentMood] = useState("neutral");
   const [showKeyboard, setShowKeyboard] = useState(false);
+  const [keyboardActive, setKeyboardActive] = useState(false);
   
   const messagesEndRef = useRef(null);
   const recognitionRef = useRef(null);
@@ -258,6 +259,7 @@ const MentalHealthChat = () => {
   const currentUtteranceRef = useRef(null);
   const transcriptRef = useRef("");
   const inputRef = useRef(null);
+  const chatContainerRef = useRef(null);
   
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -319,6 +321,18 @@ const MentalHealthChat = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  // Update keyboardActive state when keyboard appears/disappears
+  useEffect(() => {
+    setKeyboardActive(showKeyboard);
+    
+    // When keyboard appears, scroll to the bottom of the chat
+    if (showKeyboard) {
+      setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
+    }
+  }, [showKeyboard]);
+
   // Hide keyboard when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -342,138 +356,138 @@ const MentalHealthChat = () => {
     }
   };
   
- const analyzeSentiment = (text) => {
-   const positiveWords = [
-     "happy",
-     "great",
-     "awesome",
-     "excellent",
-     "good",
-     "love",
-     "wonderful",
-   ];
-   const negativeWords = [
-     "sad",
-     "bad",
-     "terrible",
-     "awful",
-     "hate",
-     "unfortunate",
-     "sorry",
-   ];
+  const analyzeSentiment = (text) => {
+    const positiveWords = [
+      "happy",
+      "great",
+      "awesome",
+      "excellent",
+      "good",
+      "love",
+      "wonderful",
+    ];
+    const negativeWords = [
+      "sad",
+      "bad",
+      "terrible",
+      "awful",
+      "hate",
+      "unfortunate",
+      "sorry",
+    ];
 
-   const words = text.toLowerCase().split(" ");
-   const positiveCount = words.filter((word) =>
-     positiveWords.includes(word)
-   ).length;
-   const negativeCount = words.filter((word) =>
-     negativeWords.includes(word)
-   ).length;
+    const words = text.toLowerCase().split(" ");
+    const positiveCount = words.filter((word) =>
+      positiveWords.includes(word)
+    ).length;
+    const negativeCount = words.filter((word) =>
+      negativeWords.includes(word)
+    ).length;
 
-   if (positiveCount > negativeCount) return "happy";
-   if (negativeCount > positiveCount) return "sad";
-   return "neutral";
- };
+    if (positiveCount > negativeCount) return "happy";
+    if (negativeCount > positiveCount) return "sad";
+    return "neutral";
+  };
 
- const speakMessage = async (text) => {
-   if (!autoSpeak || !speechSynthRef.current) return;
+  const speakMessage = async (text) => {
+    if (!autoSpeak || !speechSynthRef.current) return;
 
-   return new Promise((resolve) => {
-     const utterance = new SpeechSynthesisUtterance(text);
-     utterance.onstart = () => {
-       setIsSpeaking(true);
-       setCurrentMood("happy");
-     };
-     utterance.onend = () => {
-       setIsSpeaking(false);
-       setCurrentMood("neutral");
-       resolve();
-     };
-     utterance.onerror = () => {
-       setIsSpeaking(false);
-       setCurrentMood("sad");
-       resolve();
-     };
-     speechSynthRef.current.speak(utterance);
-   });
- };
+    return new Promise((resolve) => {
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.onstart = () => {
+        setIsSpeaking(true);
+        setCurrentMood("happy");
+      };
+      utterance.onend = () => {
+        setIsSpeaking(false);
+        setCurrentMood("neutral");
+        resolve();
+      };
+      utterance.onerror = () => {
+        setIsSpeaking(false);
+        setCurrentMood("sad");
+        resolve();
+      };
+      speechSynthRef.current.speak(utterance);
+    });
+  };
 
- const handleSendMessage = async (message) => {
-   if (!message.trim() || isSpeaking) return;
+  const handleSendMessage = async (message) => {
+    if (!message.trim() || isSpeaking) return;
 
-   const userMessage = message.trim();
-   setInputMessage("");
-   setShowKeyboard(false);
+    const userMessage = message.trim();
+    setInputMessage("");
+    setShowKeyboard(false);
 
-   // Add user message and update mood based on sentiment
-   const userMood = analyzeSentiment(userMessage);
-   setCurrentMood(userMood);
+    // Add user message and update mood based on sentiment
+    const userMood = analyzeSentiment(userMessage);
+    setCurrentMood(userMood);
 
-   setMessages((prev) => [
-     ...prev,
-     {
-       type: "user",
-       content: userMessage,
-       mood: userMood,
-     },
-   ]);
+    setMessages((prev) => [
+      ...prev,
+      {
+        type: "user",
+        content: userMessage,
+        mood: userMood,
+      },
+    ]);
 
-   setIsTyping(true);
-   setCurrentMood("thinking");
+    setIsTyping(true);
+    setCurrentMood("thinking");
 
-   try {
-     const response = await fetch("http://localhost:5000/chat", {
-       method: "POST",
-       headers: { "Content-Type": "application/json" },
-       body: JSON.stringify({
-         message: userMessage,
-         chatHistory: messages,
-       }),
-     });
+    try {
+      const response = await fetch("http://localhost:5000/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: userMessage,
+          chatHistory: messages,
+        }),
+      });
 
-     const data = await response.json();
-     const botMood = analyzeSentiment(data.response);
+      const data = await response.json();
+      const botMood = analyzeSentiment(data.response);
 
-     setMessages((prev) => [
-       ...prev,
-       {
-         type: "bot",
-         content: data.response,
-         mood: botMood,
-       },
-     ]);
+      setMessages((prev) => [
+        ...prev,
+        {
+          type: "bot",
+          content: data.response,
+          mood: botMood,
+        },
+      ]);
 
-     if (!isSpeaking) {
-       await speakMessage(data.response);
-     }
-   } catch (error) {
-     console.error("Error sending message:", error);
-     setError("Failed to send message. Please try again.");
-     setCurrentMood("sad");
-   } finally {
-     setIsTyping(false);
-     setTimeout(() => setCurrentMood("neutral"), 1000);
-   }
- };
+      if (!isSpeaking) {
+        await speakMessage(data.response);
+      }
+    } catch (error) {
+      console.error("Error sending message:", error);
+      setError("Failed to send message. Please try again.");
+      setCurrentMood("sad");
+    } finally {
+      setIsTyping(false);
+      setTimeout(() => setCurrentMood("neutral"), 1000);
+    }
+  };
 
- const toggleListening = () => {
-   if (!recognitionRef.current) {
-     setError("Speech recognition is not supported in your browser.");
-     return;
-   }
+  const toggleListening = () => {
+    if (!recognitionRef.current) {
+      setError("Speech recognition is not supported in your browser.");
+      return;
+    }
 
-   if (isListening) {
-     recognitionRef.current.stop();
-   } else {
-     setInputMessage("");
-     setShowKeyboard(false);
-     recognitionRef.current.start();
-   }
- };
+    if (isListening) {
+      recognitionRef.current.stop();
+    } else {
+      setInputMessage("");
+      setShowKeyboard(false);
+      recognitionRef.current.start();
+    }
+  };
 
- const handleInputFocus = () => {
-   setShowKeyboard(true);
- };
+  const handleInputFocus = () => {
+    setShowKeyboard(true);
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-purple-900 relative overflow-hidden">
@@ -552,7 +566,12 @@ const MentalHealthChat = () => {
         </motion.div>
 
         {/* Chat Container */}
-        <div className="flex-1 backdrop-blur-xl bg-white/5 overflow-hidden flex flex-col rounded-b-2xl shadow-lg border border-white/20">
+        <div 
+          ref={chatContainerRef}
+          className={`flex-1 backdrop-blur-xl bg-white/5 overflow-hidden flex flex-col rounded-b-2xl shadow-lg border border-white/20 ${
+            showKeyboard ? 'pb-64' : ''
+          }`}
+        >
           {/* Messages */}
           <div className="flex-1 overflow-y-auto p-6 space-y-6">
             <AnimatePresence>
@@ -626,11 +645,14 @@ const MentalHealthChat = () => {
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Input Area */}
+          {/* Input Area - Moved up when keyboard is active */}
           <motion.div
-            className="p-6 border-t border-white/10 input-area"
+            className={`p-6 border-t border-white/10 input-area ${
+              keyboardActive ? 'fixed bottom-64 left-0 right-0 bg-gray-900/95 border-b border-white/10 rounded-b-none z-40' : ''
+            }`}
             initial={{ y: 20 }}
             animate={{ y: 0 }}
+            transition={{ type: "spring", stiffness: 300, damping: 30 }}
           >
             <form
               onSubmit={(e) => {
@@ -754,6 +776,11 @@ const MentalHealthChat = () => {
           </motion.div>
         </div>
       </div>
+
+      {/* Space Reservation for Keyboard */}
+      {showKeyboard && (
+        <div className="h-64"></div>
+      )}
 
       {/* Virtual Keyboard */}
       <AnimatePresence>
